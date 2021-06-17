@@ -5,11 +5,19 @@ const app = new Express();
 const logger = morgan('combined');
 
 app.use(logger);
-//app.use(Express.static('public'));
 app.use(Express.urlencoded({ extended: true }));
+app.set('view engine', 'pug');
 
-app.get('/', (req, res) => {
-    res.render('index.html');
+app.get('/reg', (req, res) => {
+    res.render('reg');
+});
+
+app.get('/auth', (req, res) => {
+    res.render('auth');
+});
+
+app.get('/post-news', (req, res) => {
+    res.render('post-news');
 });
 
 app.listen(8080, () => {
