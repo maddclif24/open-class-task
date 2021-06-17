@@ -1,7 +1,8 @@
 import crypto from 'crypto';
 
-export default (text) => {
-  const hash = crypto.createHmac('sha512', 'mahopcet');
-  hash.update(text);
-  return hash.digest('hex');
+export default (password, salt) => {
+  const randomSalt = salt ?? Math.random().toString(36).substring(2);
+  const hash = crypto.createHmac('sha512', randomSalt);
+  hash.update(password);
+  return [hash.digest('hex'), randomSalt];
 };

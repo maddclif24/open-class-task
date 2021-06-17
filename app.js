@@ -28,14 +28,32 @@ app.route('/reg')
             const db = client.db("open_class_task");
             const collection = await db.collection("users");
             const { login, email, password } = req.body;
-            await collection.insertOne({ login, email, password: encrypt(password) });
+            const [hashPassword, salt] = encrypt(password);
+            await collection.insertOne({ login, email, password: hashPassword, salt });
           });
         res.send(req.body);
     });
 
-app.get('/auth', (req, res) => {
-    res.render('auth');
-});
+app.route('/auth')
+    .get((req, res) => {
+        res.render('auth');
+    })
+    .post((req, res) => {
+        MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }, async (error, client) => {
+            if (error) {
+              throw new Error(error);
+            }
+            const db = client.db("open_class_task");
+            const collection = await db.collection("users");
+            const { login, password } = req.body;
+            collection.findOne({ login }).then((data) => {
+                const [verifiablePassword] = encrypt(password, data.salt);
+                if (data.password === verifiablePassword) {
+                    res.send('Yeah!')
+                } else res.send('error');
+            })
+          });
+    });
 
 app.route('/post-news')
     .get((req, res) => {
