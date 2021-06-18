@@ -7,7 +7,8 @@ import encrypt from './utils/encrypt.js';
 const app = new Express();
 const logger = morgan('combined');
 
-const uri = "mongodb+srv://maddclif:2569814795a@cluster0.andql.mongodb.net/open_class_taskretryWrites=true&w=majority";
+
+const uri = "mongodb+srv://maddclif:2569814795a@cluster0.andql.mongodb.net/open_class_task?retryWrites=true&w=majority";
 
 
 app.use(logger);
