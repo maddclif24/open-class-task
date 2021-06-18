@@ -3,6 +3,8 @@ import morgan from 'morgan';
 import News from './utils/News.js';
 import MongoClient from 'mongodb';
 import encrypt from './utils/encrypt.js';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 
 const app = new Express();
 const logger = morgan('combined');
@@ -14,6 +16,13 @@ const uri = "mongodb+srv://maddclif:2569814795a@cluster0.andql.mongodb.net/open_
 app.use(logger);
 app.use(Express.urlencoded({ extended: true }));
 app.set('view engine', 'pug');
+app.use(session({
+    secret: '66c69fe7f539e2780bce1cbc3f8b68c115502e212578238213328f32f20b34a4',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false },
+    store: MongoStore.create({ mongoUrl: uri })
+}));
 
 
 app.get('/', (req, res) => {
@@ -54,6 +63,7 @@ app.route('/auth')
                 if (data) {
                     const [verifiablePassword] = encrypt(password, data.salt);
                     if (data.password === verifiablePassword) {
+                        req.session.uid = data._id;
                         res.redirect('/news');
                     }
                 } else res.send(`Login: ${login} not found!`);
