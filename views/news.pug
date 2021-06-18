@@ -1,0 +1,15 @@
+doctype html
+html
+  head
+    meta(name='viewport' content='width=device-width' initial-scale='1.0')
+    title News Page
+  body
+    table
+      tbody
+        tr
+          th Title
+          a(href="/post-news") Create News
+        each news in data
+          tr
+            td
+              a(href=`/show-news/${news.id}`)= news.title
