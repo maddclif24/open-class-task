@@ -7,5 +7,8 @@ html
     div
       a(href='/news') Back to News
     div
-      h3= news.title
+      h2= news.title
       p= news.body
+    if author
+      div
+        a(href="/edit-news") Edit News

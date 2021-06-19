@@ -79,7 +79,6 @@ app.get('/news', (req, res) => {
         const db = client.db("open_class_task");
         const collection = await db.collection("news_collection");
         collection.find({}).toArray().then((data) => {
-            console.log(data)
             if (data) {
                 res.render('news', { data });
             } else res.send('News not found');
@@ -87,21 +86,45 @@ app.get('/news', (req, res) => {
     });
 });
 
-app.get('/show-news/:id', (req, res) => {
-    MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }, async (error, client) => {
-        if (error) {
-          throw new Error(error);
-        }
-        const db = client.db("open_class_task");
-        const collection = await db.collection("news_collection");
-        collection.find({}).toArray().then((data) => {
-            if (data) {
-                const news = data.find((n) => n.id.toString() === req.params.id);
-                res.render('show-news', { news });
-            } else res.send(`News ${news} not found`);
+app.route('/show-news/:id')
+    .get((req, res) => {
+        MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }, async (error, client) => {
+            if (error) {
+                throw new Error(error);
+            }
+            const db = client.db("open_class_task");
+            const collection = await db.collection("news_collection");
+            collection.find({}).toArray().then((data) => {
+                if (data) {
+                    const currentUserId = req.session.uid;
+                    const news = data.find((n) => n.id.toString() === req.params.id);
+                    const author = currentUserId === news.authorId;
+                    req.session.newsId = news._id;
+                    res.render('show-news', { news, author });
+                } else res.send(`News ${news} not found`);
+            });
         });
     });
-});
+
+app.route('/edit-news')
+    .get((req, res) => {
+        res.render('edit-news');
+    })
+    .post((req, res) => {
+        MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }, async (error, client) => {
+            if (error) {
+                throw new Error(error);
+            }
+            const db = client.db("open_class_task");
+            const collection = await db.collection("news_collection");
+            const { newsId } = req.session;
+            const { title, body } = req.body;
+            console.log(title, body)
+            console.log(newsId)
+            await collection.updateOne({ _id: newsId }, { $set: { title, body } });
+            res.redirect('/news');
+        });
+    });
 
 app.route('/post-news')
     .get((req, res) => {
@@ -115,7 +138,8 @@ app.route('/post-news')
             const db = client.db("open_class_task");
             const collection = await db.collection("news_collection");
             const { title, body } = req.body;
-            const newNews = new News(title, body);
+            const authorId = req.session.uid;
+            const newNews = new News(title, body, authorId);
             await collection.insertOne(newNews);
             res.redirect(`/show-news/${newNews.id}`);
         });
