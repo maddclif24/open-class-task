@@ -1,11 +1,10 @@
 extends ./layouts/app.pug
 
 block content
-  body
-    form(method='post' action="/auth")
-      div
-        input(name="login" placeholder="Login" required)
-      div
-        input(name="password" type="password" placeholder="password" required)
-      div
-        input(type="submit" value="LogIn")
+  form(method='post' action="/auth")
+    div
+        nput(name="login" placeholder="Login" required)
+    div
+      input(name="password" type="password" placeholder="password" required)
+    div
+      input(type="submit" value="LogIn")
