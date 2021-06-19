@@ -5,7 +5,6 @@ import MongoClient from 'mongodb';
 import encrypt from './utils/encrypt.js';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
-import ObjectId from 'mongodb';
 
 const app = new Express();
 const logger = morgan('combined');
@@ -95,14 +94,14 @@ app.route('/show-news/:id')
             }
             const db = client.db("open_class_task");
             const collection = await db.collection("news_collection");
-            collection.find({}).toArray().then((data) => {
-                if (data) {
+            const newsId = req.params.id;
+            collection.findOne({ _id: MongoClient.ObjectId(newsId) }).then((news) => {
+                if (news) {
                     const currentUserId = req.session.uid;
-                    const news = data.find((n) => n.id.toString() === req.params.id);
                     const author = currentUserId === news.authorId;
                     const newsId = news._id;
                     res.render('show-news', { news, author, newsId });
-                } else res.send(`News ${news} not found`);
+                } else res.send('News not found');
             });
         });
     });
@@ -120,9 +119,7 @@ app.route('/edit-news/:id')
             const collection = await db.collection("news_collection");
             const newsId = req.params.id;
             const { title, body } = req.body;
-            console.log(newsId, title, body, '+++++++++++');
-            const tmp = await collection.updateOne({ _id: ObjectId(newsId) }, { $set: { title, body } });
-            console.log(tmp);
+            await collection.updateOne({ _id: MongoClient.ObjectId(newsId) }, { $set: { title, body } });
             res.redirect('/news');
         });
     });
@@ -141,8 +138,8 @@ app.route('/post-news')
             const { title, body } = req.body;
             const authorId = req.session.uid;
             const newNews = new News(title, body, authorId);
-            await collection.insertOne(newNews);
-            res.redirect(`/show-news/${newNews.id}`);
+            const newsMongo = await collection.insertOne(newNews);
+            res.redirect(`/show-news/${newsMongo.insertedId}`);
         });
     });
 
