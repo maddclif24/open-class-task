@@ -49,11 +49,11 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
         .post(async (req, res) => {
             const collection = await db.collection("users");
             const { login, password } = req.body;
-            const data = await collection.findOne({ login });
-            if (data) {
-                const [verifiablePassword] = encrypt(password, data.salt);
-                if (data.password === verifiablePassword) {
-                    req.session.uid = data._id;
+            const user = await collection.findOne({ login });
+            if (user) {
+                const [verifiablePassword] = encrypt(password, user.salt);
+                if (user.password === verifiablePassword) {
+                    req.session.uid = user._id;
                     res.redirect('/news');
                 }
             } else res.send(`Login: ${login} not found!`);
@@ -61,8 +61,8 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
     
     app.get('/news', async (req, res) => {
         const collection = await db.collection("news_collection");
-        const data = await collection.find({}).toArray();
-        res.render('news', { data });
+        const allNews = await collection.find({}).toArray();
+        res.render('news', { allNews });
     });
     
     app.route('/show-news/:id')

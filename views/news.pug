@@ -1,15 +1,12 @@
-doctype html
-html
-  head
-    meta(name='viewport' content='width=device-width' initial-scale='1.0')
-    title News Page
-  body
-    table
-      tbody
+extends ./layouts/app.pug
+
+block content
+  table
+    tbody
+      tr
+        th All News
+        a(href="/post-news") Create News
+      each news in allNews
         tr
-          th Title
-          a(href="/post-news") Create News
-        each news in data
-          tr
-            td
-              a(href=`/show-news/${news._id}`)= news.title
+          td
+            a(href=`/show-news/${news._id}`)= news.title

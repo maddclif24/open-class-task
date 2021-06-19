@@ -1,9 +1,6 @@
-doctype html
-html
-  head
-    meta(name='viewport' content='width=device-width' initial-scale='1.0')
-    title News Page
-  body
+extends ./layouts/app.pug
+
+block content
     form(method='post' action="/post-news")
       div
         input(type="text" name="title" placeholder="Title" required)
