@@ -102,7 +102,7 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
             const newsMongo = await collection.insertOne(newNews);
             res.redirect(`/show-news/${newsMongo.insertedId}`);
         });
-})
+});
 
 
 app.listen(8080, () => {
