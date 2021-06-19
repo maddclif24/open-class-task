@@ -5,6 +5,7 @@ import MongoClient from 'mongodb';
 import encrypt from './utils/encrypt.js';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import ObjectId from 'mongodb';
 
 const app = new Express();
 const logger = morgan('combined');
@@ -99,16 +100,16 @@ app.route('/show-news/:id')
                     const currentUserId = req.session.uid;
                     const news = data.find((n) => n.id.toString() === req.params.id);
                     const author = currentUserId === news.authorId;
-                    req.session.newsId = news._id;
-                    res.render('show-news', { news, author });
+                    const newsId = news._id;
+                    res.render('show-news', { news, author, newsId });
                 } else res.send(`News ${news} not found`);
             });
         });
     });
 
-app.route('/edit-news')
+app.route('/edit-news/:id')
     .get((req, res) => {
-        res.render('edit-news');
+        res.render('edit-news', { newsId: req.params.id });
     })
     .post((req, res) => {
         MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }, async (error, client) => {
@@ -117,11 +118,11 @@ app.route('/edit-news')
             }
             const db = client.db("open_class_task");
             const collection = await db.collection("news_collection");
-            const { newsId } = req.session;
+            const newsId = req.params.id;
             const { title, body } = req.body;
-            console.log(title, body)
-            console.log(newsId)
-            await collection.updateOne({ _id: newsId }, { $set: { title, body } });
+            console.log(newsId, title, body, '+++++++++++');
+            const tmp = await collection.updateOne({ _id: ObjectId(newsId) }, { $set: { title, body } });
+            console.log(tmp);
             res.redirect('/news');
         });
     });
