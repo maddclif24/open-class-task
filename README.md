@@ -2,7 +2,7 @@
 
 Clone repository
 ```
-git commit https://github.com/maddclif24/open-class-task.git
+git clone https://github.com/maddclif24/open-class-task.git
 ```
 Go to the repository directory
 ```
