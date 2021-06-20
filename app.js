@@ -5,18 +5,20 @@ import MongoClient from 'mongodb';
 import encrypt from './utils/encrypt.js';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = new Express();
 const logger = morgan('combined');
 
-
-const uri = "mongodb+srv://maddclif:2569814795a@cluster0.andql.mongodb.net/open_class_task?retryWrites=true&w=majority";
+const uri = `mongodb+srv://maddclif:${process.env.DATABASE_PASSWORD}@cluster0.andql.mongodb.net/open_class_task?retryWrites=true&w=majority`;
 
 app.use(logger);
 app.use(Express.urlencoded({ extended: true }));
 app.set('view engine', 'pug');
 app.use(session({
-    secret: '66c69fe7f539e2780bce1cbc3f8b68c115502e212578238213328f32f20b34a4',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false },
@@ -72,9 +74,11 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
             const news = await collection.findOne({ _id: MongoClient.ObjectId(newsId) });
             if (news) {
                 const currentUserId = req.session.uid;
-                const author = currentUserId === news.authorId;
-                const newsId = news._id;
-                res.render('show-news', { news, author, newsId });
+                const canEdit = currentUserId === news.authorId;
+                const collectionUsers = await db.collection("users");
+                const authorNews = await collectionUsers.findOne({ _id: MongoClient.ObjectId(news.authorId) });
+                const author = `Author of this news - ${authorNews.login}`;
+                res.render('show-news', { news, canEdit, newsId: news._id, author });
             } else res.send('News not found');
         });
     
@@ -87,7 +91,7 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
             const newsId = req.params.id;
             const { title, body } = req.body;
             await collection.updateOne({ _id: MongoClient.ObjectId(newsId) }, { $set: { title, body } });
-            res.redirect('/news');
+            res.redirect(`/show-news/${newsId}`);
         });
     
     app.route('/post-news')

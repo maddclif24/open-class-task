@@ -5,7 +5,8 @@ block content
     a(href='/news') Back to News
   div
     h2= news.title
+    h3= author
     p= news.body
-  if author
+  if canEdit
     div
       a(href=`/edit-news/${newsId}`) Edit News
