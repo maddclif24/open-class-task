@@ -28,6 +28,12 @@ app.use(session({
 MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).then((client) => {
     const db = client.db("open_class_task");
 
+    const getLogin = async (userId) => {
+        const collectionUsers = await db.collection("users");
+        const currentUser = await collectionUsers.findOne({ _id: MongoClient.ObjectId(userId) });
+        return `Current user - ${currentUser.login}`;
+    };
+
     app.get('/', (req, res) => {
         res.render('main');
     });
@@ -64,7 +70,9 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
     app.get('/news', async (req, res) => {
         const collection = await db.collection("news_collection");
         const allNews = await collection.find({}).toArray();
-        res.render('news', { allNews });
+        const login = await getLogin(req.session.uid);
+        console.log(login)
+        res.render('news', { allNews, login });
     });
     
     app.route('/show-news/:id')
@@ -78,13 +86,15 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
                 const collectionUsers = await db.collection("users");
                 const authorNews = await collectionUsers.findOne({ _id: MongoClient.ObjectId(news.authorId) });
                 const author = `Author of this news - ${authorNews.login}`;
-                res.render('show-news', { news, canEdit, newsId: news._id, author });
+                const login = await getLogin(req.session.uid);
+                res.render('show-news', { news, canEdit, newsId: news._id, author, login });
             } else res.send('News not found');
         });
     
     app.route('/edit-news/:id')
-        .get((req, res) => {
-            res.render('edit-news', { newsId: req.params.id });
+        .get(async (req, res) => {
+            const login = await getLogin(req.session.uid);
+            res.render('edit-news', { newsId: req.params.id, login });
         })
         .post(async (req, res) => {
             const collection = await db.collection("news_collection");
@@ -95,8 +105,9 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
         });
     
     app.route('/post-news')
-        .get((req, res) => {
-            res.render('post-news');
+        .get(async (req, res) => {
+            const login = await getLogin(req.session.uid);
+            res.render('post-news', { login });
         })
         .post(async (req, res) => {
             const collection = await db.collection("news_collection");
