@@ -121,8 +121,9 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
                 const collection = await db.collection("news_collection");
                 const newsId = req.params.id;
                 const news = await collection.findOne({ _id: MongoClient.ObjectId(newsId) });
-                if (news.authorId === req.session.id) {
-                    res.render(201, 'edit-news', { newsId: req.params.id, login });
+                const login = await getLogin(req.session.uid);
+                if (news.authorId === req.session.uid) {
+                    res.render('edit-news', { newsId: req.params.id, login });
                 } else res.redirect('/news');
             } else res.send(401, 'You are not authorized!');
         })
@@ -131,7 +132,7 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
                 const newsId = req.params.id;
                 const collection = await db.collection("news_collection");
                 const news = await collection.findOne({ _id: MongoClient.ObjectId(newsId) });
-                if (news.authorId === req.session.id) {
+                if (news.authorId === req.session.uid) {
                     const { title, body } = req.body;
                     await collection.updateOne({ _id: MongoClient.ObjectId(newsId) }, { $set: { title, body } });
                     res.redirect(`/show-news/${newsId}`);
