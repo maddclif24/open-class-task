@@ -118,16 +118,25 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
     app.route('/edit-news/:id')
         .get(async (req, res) => {
             if (req.session.uid) {
-                const login = await getLogin(req.session.uid);
-                res.render(201, 'edit-news', { newsId: req.params.id, login });
+                const collection = await db.collection("news_collection");
+                const newsId = req.params.id;
+                const news = await collection.findOne({ _id: MongoClient.ObjectId(newsId) });
+                if (news.authorId === req.session.id) {
+                    res.render(201, 'edit-news', { newsId: req.params.id, login });
+                } else res.redirect('/news');
             } else res.send(401, 'You are not authorized!');
         })
         .post(async (req, res) => {
-            const collection = await db.collection("news_collection");
-            const newsId = req.params.id;
-            const { title, body } = req.body;
-            await collection.updateOne({ _id: MongoClient.ObjectId(newsId) }, { $set: { title, body } });
-            res.redirect(`/show-news/${newsId}`);
+            if (req.session.uid) {
+                const newsId = req.params.id;
+                const collection = await db.collection("news_collection");
+                const news = await collection.findOne({ _id: MongoClient.ObjectId(newsId) });
+                if (news.authorId === req.session.id) {
+                    const { title, body } = req.body;
+                    await collection.updateOne({ _id: MongoClient.ObjectId(newsId) }, { $set: { title, body } });
+                    res.redirect(`/show-news/${newsId}`);
+                } else res.redirect('/news');
+            } else res.send(401, 'You are not authorized!');
         });
     
     app.route('/post-news')
@@ -138,11 +147,13 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
             } else res.send(401, 'You are not authorized!');
         })
         .post(async (req, res) => {
-            const collection = await db.collection("news_collection");
-            const { title, body } = req.body;
-            const authorId = req.session.uid;
-            const newsMongo = await collection.insertOne(new News(title, body, authorId));
-            res.redirect(`/show-news/${newsMongo.insertedId}`);
+            if (req.session.uid) {
+                const collection = await db.collection("news_collection");
+                const { title, body } = req.body;
+                const authorId = req.session.uid;
+                const newsMongo = await collection.insertOne(new News(title, body, authorId));
+                res.redirect(`/show-news/${newsMongo.insertedId}`);
+            } else res.send(401, 'You are not authorized!');
         });
 });
 
