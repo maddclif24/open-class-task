@@ -129,9 +129,6 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
             res.redirect(`/show-news/${newsMongo.insertedId}`);
         });
 });
-/*app.use((req, res) => {
-    res.send(404, `Page [${req.url}] not found!`);
-});*/
 
 app.listen(8080, () => {
     console.log(`Example app listening on port 8080!`);
