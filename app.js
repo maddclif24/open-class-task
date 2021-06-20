@@ -12,7 +12,7 @@ dotenv.config();
 const app = new Express();
 const logger = morgan('combined');
 
-const uri = `mongodb+srv://maddclif:${process.env.DATABASE_PASSWORD}@cluster0.andql.mongodb.net/open_class_task?retryWrites=true&w=majority`;
+const uri = process.env.DATABASE_URI;
 
 app.use(logger);
 app.use(Express.urlencoded({ extended: true }));
@@ -35,12 +35,26 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
     };
 
     app.get('/', (req, res) => {
-        res.render('main');
+        const isLogin = req.session.uid ? true : false;
+        res.render('main', { isLogin });
     });
+
+    app.route('/out')
+        .get((req, res) => {
+            if (req.session.uid) {
+                res.render('out');
+            } else res.redirect('/');
+        })
+        .post(async (req, res) => {
+            await req.session.destroy();
+            res.redirect('/');
+        })
     
     app.route('/reg')
         .get((req, res) => {
-            res.render('reg');
+            if (req.session.uid) {
+                res.redirect('/news')
+            } else res.render('reg');
         })
         .post(async (req, res) => {
             const collection = await db.collection("users");
@@ -57,7 +71,9 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
     
     app.route('/auth')
         .get((req, res) => {
-            res.render('auth');
+            if (req.session.uid) {
+                res.redirect('/news');
+            } else res.render('auth');
         })
         .post(async (req, res) => {
             const collection = await db.collection("users");

@@ -1,0 +1,9 @@
+extends ./layouts/app.pug
+
+block content
+    div
+      a(href='/') Back
+    h4 Log out of sessions
+    form(method='post' action="/out")
+      div
+        input(type="submit" value="LogOut")

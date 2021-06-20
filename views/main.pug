@@ -3,5 +3,9 @@ extends ./layouts/app.pug
 block content
   div
     a(href='/reg') Registration
-  div
-    a(href='/auth') LogIn
+  if isLogin
+    div
+      a(href='/out') LogOut
+  else
+    div
+      a(href='/auth') LogIn
