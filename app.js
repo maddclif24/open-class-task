@@ -46,8 +46,13 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
             const collection = await db.collection("users");
             const { login, email, password } = req.body;
             const [hashPassword, salt] = encrypt(password);
-            await collection.insertOne({ login, email, password: hashPassword, salt });
-            res.redirect('/auth');
+            try {
+                await collection.insertOne({ login, email, password: hashPassword, salt });
+                res.redirect('/auth');
+            } catch (error) {
+                const [context, value] = error.keyValue.login ? ['login', login] : ['email', email];
+                res.send(`User with ${context} ${value} already exists!`);
+            }
         });
     
     app.route('/auth')
@@ -63,38 +68,43 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
                 if (user.password === verifiablePassword) {
                     req.session.uid = user._id;
                     res.redirect('/news');
-                }
+                } else res.send(`Invalid password!`)
             } else res.send(`Login: ${login} not found!`);
         });
     
     app.get('/news', async (req, res) => {
-        const collection = await db.collection("news_collection");
-        const allNews = await collection.find({}).toArray();
-        const login = await getLogin(req.session.uid);
-        console.log(login)
-        res.render('news', { allNews, login });
+        if (req.session.uid) {
+            const collection = await db.collection("news_collection");
+            const allNews = await collection.find({}).toArray();
+            const login = await getLogin(req.session.uid);
+            res.render('news', { allNews, login });   
+        } else res.send(401, 'You are not authorized!');
     });
     
     app.route('/show-news/:id')
         .get(async (req, res) => {
-            const collection = await db.collection("news_collection");
-            const newsId = req.params.id;
-            const news = await collection.findOne({ _id: MongoClient.ObjectId(newsId) });
-            if (news) {
-                const currentUserId = req.session.uid;
-                const canEdit = currentUserId === news.authorId;
-                const collectionUsers = await db.collection("users");
-                const authorNews = await collectionUsers.findOne({ _id: MongoClient.ObjectId(news.authorId) });
-                const author = `Author of this news - ${authorNews.login}`;
-                const login = await getLogin(req.session.uid);
-                res.render('show-news', { news, canEdit, newsId: news._id, author, login });
-            } else res.send('News not found');
+            if (req.session.uid) {
+                const collection = await db.collection("news_collection");
+                const newsId = req.params.id;
+                const news = await collection.findOne({ _id: MongoClient.ObjectId(newsId) });
+                if (news) {
+                    const currentUserId = req.session.uid;
+                    const canEdit = currentUserId === news.authorId;
+                    const collectionUsers = await db.collection("users");
+                    const authorNews = await collectionUsers.findOne({ _id: MongoClient.ObjectId(news.authorId) });
+                    const author = `Author of this news - ${authorNews.login}`;
+                    const login = await getLogin(req.session.uid);
+                    res.render('show-news', { news, canEdit, newsId: news._id, author, login });
+                } else res.send('News not found!');
+            } else res.send(401, 'You are not authorized!');
         });
     
     app.route('/edit-news/:id')
         .get(async (req, res) => {
-            const login = await getLogin(req.session.uid);
-            res.render('edit-news', { newsId: req.params.id, login });
+            if (req.session.uid) {
+                const login = await getLogin(req.session.uid);
+                res.render(201, 'edit-news', { newsId: req.params.id, login });
+            } else res.send(401, 'You are not authorized!');
         })
         .post(async (req, res) => {
             const collection = await db.collection("news_collection");
@@ -106,19 +116,22 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
     
     app.route('/post-news')
         .get(async (req, res) => {
-            const login = await getLogin(req.session.uid);
-            res.render('post-news', { login });
+            if (req.session.uid) {
+                const login = await getLogin(req.session.uid);
+                res.render('post-news', { login });
+            } else res.send(401, 'You are not authorized!');
         })
         .post(async (req, res) => {
             const collection = await db.collection("news_collection");
             const { title, body } = req.body;
             const authorId = req.session.uid;
-            const newNews = new News(title, body, authorId);
-            const newsMongo = await collection.insertOne(newNews);
+            const newsMongo = await collection.insertOne(new News(title, body, authorId));
             res.redirect(`/show-news/${newsMongo.insertedId}`);
         });
 });
-
+/*app.use((req, res) => {
+    res.send(404, `Page [${req.url}] not found!`);
+});*/
 
 app.listen(8080, () => {
     console.log(`Example app listening on port 8080!`);
