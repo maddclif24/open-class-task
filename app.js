@@ -123,7 +123,7 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
                 const news = await collection.findOne({ _id: MongoClient.ObjectId(newsId) });
                 const login = await getLogin(req.session.uid);
                 if (news.authorId === req.session.uid) {
-                    res.render('edit-news', { newsId: req.params.id, login });
+                    res.render('edit-news', { newsId: req.params.id, login, news });
                 } else res.redirect('/news');
             } else res.send(401, 'You are not authorized!');
         })

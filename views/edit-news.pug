@@ -4,8 +4,8 @@ block content
   h3= login
   form(method='post' action=`/edit-news/${newsId}`)
     div
-      input(type="text" name="title" placeholder="Title" required)
+      input(type="text" name="title" value=news.title required)
     div
-      textarea(name="body" placeholder="...Edit News" required)
+      textarea(name="body" rows=15 cols=25 required)=news.body
     div
       input(type="submit" value="Edit")
