@@ -156,6 +156,12 @@ MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).th
                 res.redirect(`/show-news/${newsMongo.insertedId}`);
             } else res.send(401, 'You are not authorized!');
         });
+
+    app.use((req, res, next) => {
+        res.status(404);
+        res.render('404');
+        next();
+    });
 });
 
 app.listen(8080, () => {
